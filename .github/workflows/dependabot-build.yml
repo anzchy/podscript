@@ -1,0 +1,50 @@
+name: Dependabot Build Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    # Only run if the PR is from Dependabot
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Go project
+        run: |
+          echo "Building Go project..."
+          go build -v
+          if [ $? -ne 0 ]; then
+            echo "Go build failed!"
+            exit 1
+          fi
+          echo "Go build successful!"
+
+      - name: Build Node.js frontend
+        working-directory: ./web/frontend
+        run: |
+          echo "Installing Node.js dependencies..."
+          npm ci
+          echo "Building frontend..."
+          npm run build
+          if [ $? -ne 0 ]; then
+            echo "Frontend build failed!"
+            exit 1
+          fi
+          echo "Frontend build successful!"
